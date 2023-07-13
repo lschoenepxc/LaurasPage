@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.Extensions.Configuration;
 using LaurasPage.Data;
+using MatBlazor;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,6 +11,15 @@ builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddSingleton<WeatherForecastService>();
 
+builder.Services.AddMatBlazor();
+
+builder.Services.AddHttpClient();
+builder.Services.AddHttpClient("aurora", c =>
+{
+    c.BaseAddress = new Uri(builder.Configuration.GetValue<string>("AuroraAPI"));
+});
+
+// "https://api.auroras.live/v1/"
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

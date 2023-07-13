@@ -1,0 +1,69 @@
+﻿@page "/auroras"
+
+@inject IHttpClientFactory _clientFactory
+
+<h3>Aurora Forecast</h3>
+
+@if(string.IsNullOrWhiteSpace(errorString) == false)
+{
+    <div class="h2">@errorString</div>
+}
+else if (forecast is null)
+{
+    <div class="h4">Loading...</div>
+}
+else
+{
+    <table class="table table-striped">
+        <thead class="thead-dark">
+            <tr>
+                <th>Bz</th>
+                <th>Density</th>
+                <th>Speed</th>
+                <th>Kp Forecast for the next hour</th>
+                <th>Kp Forecast for the next 4 hours</th>
+                <th>Current Kp</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style="background-color: @forecast.Colour.Bz">@forecast.Bz</td>
+                <td style="background-color: @forecast.Colour.Density">@forecast.Density</td>
+                <td style="background-color: @forecast.Colour.Speed">@forecast.Speed</td>
+                <td style="background-color: @forecast.Colour.Kp1Hour">@forecast.Kp1Hour</td>
+                <td style="background-color: @forecast.Colour.Kp4Hour">@forecast.Kp4Hour</td>
+                <td style="background-color: @forecast.Colour.Kp">@forecast.Kp</td>
+                @*@foreach (PropertyInfo property in properties)
+        {
+            <td>@property.GetValue(forecast.Colour)</td>
+        }*@
+            </tr>
+        </tbody>
+    </table
+    <br />
+    <p>Colours range from green = no activity to red = lots of activity.</p>
+    <br />
+    <a href="https://auroraslive.io/#/">Powered by Auroras.live</a>
+}
+
+@code {
+    AuroraForecastModel forecast;
+    string errorString;
+    PropertyInfo[] properties;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var client = _clientFactory.CreateClient("aurora");
+        try
+        {
+            forecast = await client.GetFromJsonAsync<AuroraForecastModel>("?type=ace&data=all&colour=hex");
+            properties = typeof(AuroraColour).GetProperties();
+            errorString = null;
+        }
+        catch (Exception ex)
+        {
+            errorString = $"There was an error getting our forecast: { ex.Message }";
+        }
+    }
+}
+
