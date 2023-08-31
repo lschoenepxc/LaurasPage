@@ -4,14 +4,14 @@
 
 <h3>Aurora Forecast</h3>
 <p>
-    <MatSelectItem @bind-Value="@location" Items="@locationItems" @onchange="LoadData">
+    <MatSelectItem Value="@location" Items="@locationItems" ValueExpression="() => location" ValueChanged="async (LocationType value) => LoadData(value)">
         <ItemTemplate>
             <span>@context?.Name</span>
         </ItemTemplate>
     </MatSelectItem>
 </p>
 <p>
-    Selected location: @(location?.Name) with latitude @(location?.Lat) and longitude @(location?.Log)
+    Selected location: @(location?.Name) with latitude @(location?.Lat)° and longitude @(location?.Log)°
 </p>
 
 @if (string.IsNullOrWhiteSpace(errorString) == false)
@@ -50,7 +50,9 @@ else
             </tr>
         </tbody>
     </table>
-    <br />
+    <p>Messages from Auroras.live: </p>
+        @foreach (string message in forecast.Message) { <span>@message</span>}
+    <br /> <br/>
     <p>Colours range from green = no activity to red = lots of activity.</p>
     <br />
     <a href="https://auroraslive.io/#/">Powered by Auroras.live</a>
@@ -62,7 +64,7 @@ else
     LocationType[] locationItems = new[]
         {
                 new LocationType("", 0,0),
-                new LocationType("Lemgo", 8.9019, 52.027),
+                new LocationType("Lemgo", 8.902, 52.027),
                 new LocationType("Detmold", 8.869,51.938),
                 new LocationType("Höxter", 9.377,51.777),
                 new LocationType("Barntrup", 9.121,51.991),
@@ -95,7 +97,7 @@ else
         var client = _clientFactory.CreateClient("aurora");
         try
         {
-            forecast = await client.GetFromJsonAsync<AuroraForecastModel>("?type=ace&data=all&colour=hex");
+            forecast = await client.GetFromJsonAsync<AuroraForecastModel>("?type=ace&lat=70.663&long=23.682&data=all&colour=hex");
             properties = typeof(AuroraColour).GetProperties();
             errorString = null;
             StateHasChanged();
@@ -106,8 +108,9 @@ else
         }
     }
 
-    private async Task LoadData()
+    private async Task LoadData(LocationType value)
     {
+        location = value;
         var client = _clientFactory.CreateClient("aurora");
         try
         {
