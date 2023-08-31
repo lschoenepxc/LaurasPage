@@ -3,6 +3,16 @@
 @inject IHttpClientFactory _clientFactory
 
 <h3>Aurora Forecast</h3>
+<p>
+    <MatSelectItem @bind-Value="@location" Items="@locationItems" @onchange="LoadData">
+        <ItemTemplate>
+            <span>@context?.Name</span>
+        </ItemTemplate>
+    </MatSelectItem>
+</p>
+<p>
+    Selected location: @(location?.Name) with latitude @(location?.Lat) and longitude @(location?.Log)
+</p>
 
 @if (string.IsNullOrWhiteSpace(errorString) == false)
 {
@@ -47,6 +57,35 @@ else
 }
 
 @code {
+    LocationType location = new LocationType("Hammerfest", 23.682, 70.663);
+
+    LocationType[] locationItems = new[]
+        {
+                new LocationType("", 0,0),
+                new LocationType("Lemgo", 8.9019, 52.027),
+                new LocationType("Detmold", 8.869,51.938),
+                new LocationType("Höxter", 9.377,51.777),
+                new LocationType("Barntrup", 9.121,51.991),
+                new LocationType("Berlin", 13.405,52.52),
+                new LocationType("New York", -74.006,40.713),
+                new LocationType("Hammerfest", 23.682,70.663),
+                new LocationType("Antarktis", -75.251,-0.071),
+            };
+
+    class LocationType
+    {
+        public string Name { get; }
+        public double Log { get; }
+        public double Lat { get; }
+
+        public LocationType(string name, double log, double lat)
+        {
+            Name = name;
+            Log = log;
+            Lat = lat;
+        }
+    }
+
     AuroraForecastModel forecast;
     string errorString;
     PropertyInfo[] properties;
@@ -59,6 +98,23 @@ else
             forecast = await client.GetFromJsonAsync<AuroraForecastModel>("?type=ace&data=all&colour=hex");
             properties = typeof(AuroraColour).GetProperties();
             errorString = null;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            errorString = $"There was an error getting our forecast: {ex.Message}";
+        }
+    }
+
+    private async Task LoadData()
+    {
+        var client = _clientFactory.CreateClient("aurora");
+        try
+        {
+            forecast = await client.GetFromJsonAsync<AuroraForecastModel>("?type=ace&lat="+location.Lat.ToString()+"&long="+location.Log.ToString()+"&data=all&colour=hex");
+            properties = typeof(AuroraColour).GetProperties();
+            errorString = null;
+            StateHasChanged();
         }
         catch (Exception ex)
         {
