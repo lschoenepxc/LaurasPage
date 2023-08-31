@@ -4,7 +4,7 @@
 
 <h3>Aurora Forecast</h3>
 
-@if(string.IsNullOrWhiteSpace(errorString) == false)
+@if (string.IsNullOrWhiteSpace(errorString) == false)
 {
     <div class="h2">@errorString</div>
 }
@@ -34,12 +34,12 @@ else
                 <td style="background-color: @forecast.Colour.Kp4Hour">@forecast.Kp4Hour</td>
                 <td style="background-color: @forecast.Colour.Kp">@forecast.Kp</td>
                 @*@foreach (PropertyInfo property in properties)
-        {
-            <td>@property.GetValue(forecast.Colour)</td>
-        }*@
+                    {
+                        <td>@property.GetValue(forecast.Colour)</td>
+                    }*@
             </tr>
         </tbody>
-    </table
+    </table>
     <br />
     <p>Colours range from green = no activity to red = lots of activity.</p>
     <br />
@@ -62,7 +62,7 @@ else
         }
         catch (Exception ex)
         {
-            errorString = $"There was an error getting our forecast: { ex.Message }";
+            errorString = $"There was an error getting our forecast: {ex.Message}";
         }
     }
 }
