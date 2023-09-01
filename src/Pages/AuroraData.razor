@@ -9,6 +9,7 @@
 
 <h3>Aurora Forecast</h3>
 <p>
+    Here you can select a location, for which you want to get a forecast. Default location is Hammerfest.
     <MatSelectItem Value="@location" Items="@locationItems" ValueExpression="() => location" ValueChanged="async (LocationType value) => LoadData(value)">
         <ItemTemplate>
             <span>@context?.Name</span>
