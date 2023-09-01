@@ -1,5 +1,10 @@
 ﻿@page "/auroras"
 
+@using LaurasPage.DataAccess
+@using LaurasPage.DataAccess.Models
+
+@inject IForecastData _db
+
 @inject IHttpClientFactory _clientFactory
 
 <h3>Aurora Forecast</h3>
@@ -43,10 +48,6 @@ else
                 <td style="background-color: @forecast.Colour.Kp1Hour">@forecast.Kp1Hour</td>
                 <td style="background-color: @forecast.Colour.Kp4Hour">@forecast.Kp4Hour</td>
                 <td style="background-color: @forecast.Colour.Kp">@forecast.Kp</td>
-                @*@foreach (PropertyInfo property in properties)
-                    {
-                        <td>@property.GetValue(forecast.Colour)</td>
-                    }*@
             </tr>
         </tbody>
     </table>
@@ -57,6 +58,44 @@ else
     <br />
     <a href="https://auroraslive.io/#/">Powered by Auroras.live</a>
 }
+
+<br/>
+
+@if (forecastFromDB is null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <br/>
+    <h4>The last 5 entries from the dbo.forecast table from the AuroraForecast DB</h4>
+    <table class="table table-striped">
+        <thead class="thead-dark">
+            <tr>
+                <th>Bz</th>
+                <th>Density</th>
+                <th>Speed</th>
+                <th>Kp Forecast for the next hour</th>
+                <th>Kp Forecast for the next 4 hours</th>
+                <th>Current Kp</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var forec in forecastFromDB)
+            {
+                    <tr>
+                        <td style="background-color: @forec.colourBz">@forec.Bz</td>
+                        <td style="background-color: @forec.colourDensity">@forec.Density</td>
+                        <td style="background-color: @forec.colourSpeed">@forec.Speed</td>
+                        <td style="background-color: @forec.colourKp1Hour">@forec.Kp1Hour</td>
+                        <td style="background-color: @forec.colourKp4Hour">@forec.Kp4Hour</td>
+                        <td style="background-color: @forec.colourKp">@forec.Kp</td>
+                    </tr>
+            }
+        </tbody>
+    </table>
+}
+
 
 @code {
     LocationType location = new LocationType("Hammerfest", 23.682, 70.663);
@@ -88,6 +127,8 @@ else
         }
     }
 
+    private List<ForecastModel> forecastFromDB;
+
     AuroraForecastModel forecast;
     string errorString;
     PropertyInfo[] properties;
@@ -95,6 +136,7 @@ else
     protected override async Task OnInitializedAsync()
     {
         var client = _clientFactory.CreateClient("aurora");
+        forecastFromDB = await _db.GetForecasts();
         try
         {
             forecast = await client.GetFromJsonAsync<AuroraForecastModel>("?type=ace&lat=70.663&long=23.682&data=all&colour=hex");
@@ -117,12 +159,34 @@ else
             forecast = await client.GetFromJsonAsync<AuroraForecastModel>("?type=ace&lat="+location.Lat.ToString()+"&long="+location.Log.ToString()+"&data=all&colour=hex");
             properties = typeof(AuroraColour).GetProperties();
             errorString = null;
+            InsertForecast();
             StateHasChanged();
         }
         catch (Exception ex)
         {
             errorString = $"There was an error getting our forecast: {ex.Message}";
         }
+    }
+
+    private async Task InsertForecast()
+    {
+        ForecastModel f = new ForecastModel
+        {
+            Bz = forecast.Bz,
+            Density = forecast.Density,
+            Speed = forecast.Speed,
+            Kp1Hour = forecast.Kp1Hour,
+            Kp4Hour = forecast.Kp4Hour,
+            Kp = forecast.Kp,
+            colourBz = forecast.Colour.Bz,
+            colourDensity = forecast.Colour.Density,
+            colourSpeed = forecast.Colour.Speed,
+            colourKp1Hour = forecast.Colour.Kp1Hour,
+            colourKp4Hour = forecast.Colour.Kp4Hour,
+            colourKp = forecast.Colour.Kp
+        };
+        await _db.InsertForecast(f);
+        forecastFromDB.Add(f);
     }
 }
 
