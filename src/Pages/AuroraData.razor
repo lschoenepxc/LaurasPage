@@ -3,7 +3,7 @@
 @using LaurasPage.DataAccess
 @using LaurasPage.DataAccess.Models
 
-@inject IForecastData _db
+@*@inject IForecastData _db*@
 
 @inject IHttpClientFactory _clientFactory
 
@@ -59,7 +59,7 @@ else
     <a href="https://auroraslive.io/#/">Powered by Auroras.live</a>
 }
 
-<br/>
+@*<br/>
 
 @if (forecastFromDB is null)
 {
@@ -94,7 +94,7 @@ else
             }
         </tbody>
     </table>
-}
+}*@
 
 
 @code {
@@ -127,7 +127,7 @@ else
         }
     }
 
-    private List<ForecastModel> forecastFromDB;
+    //private List<ForecastModel> forecastFromDB;
 
     AuroraForecastModel forecast;
     string errorString;
@@ -136,7 +136,7 @@ else
     protected override async Task OnInitializedAsync()
     {
         var client = _clientFactory.CreateClient("aurora");
-        forecastFromDB = await _db.GetForecasts();
+        //forecastFromDB = await _db.GetForecasts();
         try
         {
             forecast = await client.GetFromJsonAsync<AuroraForecastModel>("?type=ace&lat=70.663&long=23.682&data=all&colour=hex");
@@ -159,7 +159,7 @@ else
             forecast = await client.GetFromJsonAsync<AuroraForecastModel>("?type=ace&lat="+location.Lat.ToString()+"&long="+location.Log.ToString()+"&data=all&colour=hex");
             properties = typeof(AuroraColour).GetProperties();
             errorString = null;
-            InsertForecast();
+            //InsertForecast();
             StateHasChanged();
         }
         catch (Exception ex)
@@ -168,25 +168,25 @@ else
         }
     }
 
-    private async Task InsertForecast()
-    {
-        ForecastModel f = new ForecastModel
-        {
-            Bz = forecast.Bz,
-            Density = forecast.Density,
-            Speed = forecast.Speed,
-            Kp1Hour = forecast.Kp1Hour,
-            Kp4Hour = forecast.Kp4Hour,
-            Kp = forecast.Kp,
-            colourBz = forecast.Colour.Bz,
-            colourDensity = forecast.Colour.Density,
-            colourSpeed = forecast.Colour.Speed,
-            colourKp1Hour = forecast.Colour.Kp1Hour,
-            colourKp4Hour = forecast.Colour.Kp4Hour,
-            colourKp = forecast.Colour.Kp
-        };
-        await _db.InsertForecast(f);
-        forecastFromDB.Add(f);
-    }
+    //private async Task InsertForecast()
+    //{
+    //    ForecastModel f = new ForecastModel
+    //    {
+    //        Bz = forecast.Bz,
+    //        Density = forecast.Density,
+    //        Speed = forecast.Speed,
+    //        Kp1Hour = forecast.Kp1Hour,
+    //        Kp4Hour = forecast.Kp4Hour,
+    //        Kp = forecast.Kp,
+    //        colourBz = forecast.Colour.Bz,
+    //        colourDensity = forecast.Colour.Density,
+    //        colourSpeed = forecast.Colour.Speed,
+    //        colourKp1Hour = forecast.Colour.Kp1Hour,
+    //        colourKp4Hour = forecast.Colour.Kp4Hour,
+    //        colourKp = forecast.Colour.Kp
+    //    };
+    //    await _db.InsertForecast(f);
+    //    forecastFromDB.Add(f);
+    //}
 }
 
