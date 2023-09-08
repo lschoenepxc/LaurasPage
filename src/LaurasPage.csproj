@@ -23,4 +23,9 @@
     <Folder Include="DataAccess\" />
     <Folder Include="DataAccess\Models\" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DataLibrary\DataLibrary.csproj">
+      <GlobalPropertiesToRemove></GlobalPropertiesToRemove>
+    </ProjectReference>
+  </ItemGroup>
 </Project>

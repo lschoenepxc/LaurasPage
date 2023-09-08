@@ -1,9 +1,12 @@
 ﻿@page "/auroras"
-
-@using LaurasPage.DataAccess
+@*@using LaurasPage.DataAccess*@
+@*@inject IForecastData _db*@
 @using LaurasPage.DataAccess.Models
 
-@*@inject IForecastData _db*@
+@using DataLibrary
+@*@using Microsoft.Extensions.Configuration*@
+@inject IDataAccess _data
+@inject IConfiguration _config
 
 @inject IHttpClientFactory _clientFactory
 
@@ -53,49 +56,51 @@ else
         </tbody>
     </table>
     <p>Messages from Auroras.live: </p>
-        @foreach (string message in forecast.Message) { <span>@message</span>}
-    <br /> <br/>
+    @foreach (string message in forecast.Message)
+    {<span>@message</span>}
+    <br />
+    <br />
     <p>Colours range from green = no activity to red = lots of activity.</p>
     <br />
     <a href="https://auroraslive.io/#/">Powered by Auroras.live</a>
 }
 
-@*<br/>
+<br/>
 
-@if (forecastFromDB is null)
-{
-    <p><em>Loading...</em></p>
-}
-else
-{
-    <br/>
-    <h4>The last 5 entries from the dbo.forecast table from the AuroraForecast DB</h4>
-    <table class="table table-striped">
-        <thead class="thead-dark">
-            <tr>
-                <th>Bz</th>
-                <th>Density</th>
-                <th>Speed</th>
-                <th>Kp Forecast for the next hour</th>
-                <th>Kp Forecast for the next 4 hours</th>
-                <th>Current Kp</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var forec in forecastFromDB)
-            {
-                    <tr>
-                        <td style="background-color: @forec.colourBz">@forec.Bz</td>
-                        <td style="background-color: @forec.colourDensity">@forec.Density</td>
-                        <td style="background-color: @forec.colourSpeed">@forec.Speed</td>
-                        <td style="background-color: @forec.colourKp1Hour">@forec.Kp1Hour</td>
-                        <td style="background-color: @forec.colourKp4Hour">@forec.Kp4Hour</td>
-                        <td style="background-color: @forec.colourKp">@forec.Kp</td>
-                    </tr>
-            }
-        </tbody>
-    </table>
-}*@
+    @if (forecastFromDB is null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else
+    {
+        <br/>
+        <h4>The last 5 entries from the dbo.forecast table from the AuroraForecast DB</h4>
+        <table class="table table-striped">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Bz</th>
+                    <th>Density</th>
+                    <th>Speed</th>
+                    <th>Kp Forecast for the next hour</th>
+                    <th>Kp Forecast for the next 4 hours</th>
+                    <th>Current Kp</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var forec in forecastFromDB)
+                {
+                        <tr>
+                            <td style="background-color: @forec.colourBz">@forec.Bz</td>
+                            <td style="background-color: @forec.colourDensity">@forec.Density</td>
+                            <td style="background-color: @forec.colourSpeed">@forec.Speed</td>
+                            <td style="background-color: @forec.colourKp1Hour">@forec.Kp1Hour</td>
+                            <td style="background-color: @forec.colourKp4Hour">@forec.Kp4Hour</td>
+                            <td style="background-color: @forec.colourKp">@forec.Kp</td>
+                        </tr>
+                }
+            </tbody>
+        </table>
+    }
 
 
 @code {
@@ -128,7 +133,7 @@ else
         }
     }
 
-    //private List<ForecastModel> forecastFromDB;
+    List<ForecastModel> forecastFromDB;
 
     AuroraForecastModel forecast;
     string errorString;
@@ -136,6 +141,9 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        string sql = "SELECT top 5 * FROM forecast Order By id DESC";
+        forecastFromDB = await _data.LoadDb<ForecastModel, dynamic>(sql, new { }, _config.GetConnectionString("Default"));
+
         var client = _clientFactory.CreateClient("aurora");
         //forecastFromDB = await _db.GetForecasts();
         try
@@ -157,10 +165,10 @@ else
         var client = _clientFactory.CreateClient("aurora");
         try
         {
-            forecast = await client.GetFromJsonAsync<AuroraForecastModel>("?type=ace&lat="+location.Lat.ToString()+"&long="+location.Log.ToString()+"&data=all&colour=hex");
+            forecast = await client.GetFromJsonAsync<AuroraForecastModel>("?type=ace&lat=" + location.Lat.ToString() + "&long=" + location.Log.ToString() + "&data=all&colour=hex");
             properties = typeof(AuroraColour).GetProperties();
             errorString = null;
-            //InsertForecast();
+            InsertForecast();
             StateHasChanged();
         }
         catch (Exception ex)
@@ -169,25 +177,28 @@ else
         }
     }
 
-    //private async Task InsertForecast()
-    //{
-    //    ForecastModel f = new ForecastModel
-    //    {
-    //        Bz = forecast.Bz,
-    //        Density = forecast.Density,
-    //        Speed = forecast.Speed,
-    //        Kp1Hour = forecast.Kp1Hour,
-    //        Kp4Hour = forecast.Kp4Hour,
-    //        Kp = forecast.Kp,
-    //        colourBz = forecast.Colour.Bz,
-    //        colourDensity = forecast.Colour.Density,
-    //        colourSpeed = forecast.Colour.Speed,
-    //        colourKp1Hour = forecast.Colour.Kp1Hour,
-    //        colourKp4Hour = forecast.Colour.Kp4Hour,
-    //        colourKp = forecast.Colour.Kp
-    //    };
-    //    await _db.InsertForecast(f);
-    //    forecastFromDB.Add(f);
-    //}
+    private async Task InsertForecast()
+    {
+        string sql = @"insert into forecast (Bz, Density, Speed, Kp1Hour, Kp4Hour, Kp, colourBz, colourDensity, colourSpeed, colourKp1Hour, colourKp4Hour, colourKp)
+                           values (@Bz, @Density, @Speed, @Kp1Hour, @Kp4Hour, @Kp, @colourBz, @colourDensity, @colourSpeed, @colourKp1Hour, @colourKp4Hour, @colourKp);";
+
+        ForecastModel f = new ForecastModel
+        {
+            Bz = forecast.Bz,
+            Density = forecast.Density,
+            Speed = forecast.Speed,
+            Kp1Hour = forecast.Kp1Hour,
+            Kp4Hour = forecast.Kp4Hour,
+            Kp = forecast.Kp,
+            colourBz = forecast.Colour.Bz,
+            colourDensity = forecast.Colour.Density,
+            colourSpeed = forecast.Colour.Speed,
+            colourKp1Hour = forecast.Colour.Kp1Hour,
+            colourKp4Hour = forecast.Colour.Kp4Hour,
+            colourKp = forecast.Colour.Kp
+        };
+        await _data.SaveDb(sql, f, _config.GetConnectionString("Default"));
+        forecastFromDB.Add(f);
+    }
 }
 

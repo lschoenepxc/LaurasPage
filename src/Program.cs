@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using LaurasPage.Data;
 using MatBlazor;
 using LaurasPage.DataAccess;
+using DataLibrary;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,8 +13,12 @@ builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddSingleton<WeatherForecastService>();
 
-builder.Services.AddTransient<ISqlDataAccess, SqlDataAccess>();
-builder.Services.AddTransient<IForecastData, ForecastData>();
+// MSSQL DataAccess
+// builder.Services.AddTransient<ISqlDataAccess, SqlDataAccess>();
+// builder.Services.AddTransient<IForecastData, ForecastData>();
+
+// MySQL IDataAccess
+builder.Services.AddSingleton<IDataAccess, DataAccess>();
 
 builder.Services.AddMatBlazor();
 
